@@ -1,4 +1,4 @@
-﻿name: PR Agent Review
+name: PR Agent Review
 
 on:
   pull_request:
@@ -28,28 +28,18 @@ jobs:
           }
           try {
             $response = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
-            Write-Host "Ollama is running with models: $($response.models.name -join ', ')"
+            Write-Host "Ollama is running"
           } catch {
             Write-Error "Ollama is not accessible!"
             exit 1
           }
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install PR-Agent
-        shell: powershell
-        run: |
-          pip install pr-agent
-
       - name: Run PR-Agent Review
         shell: powershell
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB__USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONFIG__MODEL: "ollama/qwen2.5-coder:7b"
-          CONFIG__FALLBACK_MODELS: '["ollama/qwen2.5-coder:7b"]'
+          CONFIG__FALLBACK_MODELS: "ollama/qwen2.5-coder:7b"
           CONFIG__CUSTOM_MODEL_MAX_TOKENS: "32000"
           CONFIG__GIT_PROVIDER: "github"
           OLLAMA__API_BASE: "http://localhost:11434"
@@ -58,9 +48,29 @@ jobs:
           $prUrl = "${{ github.event.pull_request.html_url }}"
           if ($prUrl) {
             Write-Host "Running PR-Agent on: $prUrl"
-            python -m pr_agent.cli --pr_url $prUrl review
-            python -m pr_agent.cli --pr_url $prUrl describe
-            python -m pr_agent.cli --pr_url $prUrl improve
+            Write-Host ""
+            
+            Write-Host "=== Running: Review ==="
+            python -m pr_agent.cli --pr_url "$prUrl" review
+            
+            Write-Host ""
+            Write-Host "=== Running: Describe ==="
+            python -m pr_agent.cli --pr_url "$prUrl" describe
+            
+            Write-Host ""
+            Write-Host "=== Running: Improve ==="
+            python -m pr_agent.cli --pr_url "$prUrl" improve
+            
+            Write-Host ""
+            Write-Host "=== Running: Add Docs ==="
+            python -m pr_agent.cli --pr_url "$prUrl" add_docs
+            
+            Write-Host ""
+            Write-Host "=== Running: Generate Labels ==="
+            python -m pr_agent.cli --pr_url "$prUrl" generate_labels
+            
+            Write-Host ""
+            Write-Host "=== PR-Agent Complete ==="
           } else {
             Write-Host "No PR URL found, skipping..."
           }
