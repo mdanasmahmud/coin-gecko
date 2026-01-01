@@ -28,21 +28,11 @@ jobs:
           }
           try {
             $response = Invoke-RestMethod -Uri "http://localhost:11434/api/tags" -Method Get
-            Write-Host "Ollama is running with models: $($response.models.name -join ', ')"
+            Write-Host "Ollama is running"
           } catch {
             Write-Error "Ollama is not accessible!"
             exit 1
           }
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install PR-Agent
-        shell: powershell
-        run: |
-          pip install pr-agent
 
       - name: Run PR-Agent Review
         shell: powershell
